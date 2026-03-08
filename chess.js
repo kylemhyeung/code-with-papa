@@ -641,6 +641,11 @@ class ChessGame {
             // AI plays as black, so human (white) moves first
         }
     }
+
+    promotePawn(row, col, isWhite) {
+        // Always promote to queen for simplicity
+        this.board[row][col] = isWhite ? 'Q' : 'q';
+    }
 }
 
 // Initialize game on page load
