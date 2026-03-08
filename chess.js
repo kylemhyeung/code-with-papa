@@ -8,8 +8,8 @@ class ChessGame {
         this.gameOver = false;
         this.aiPlayer = 'white'; // AI plays as white
         this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
-        this.previousBoard = null;
-        this.previousPlayer = null;
+        this.boardHistory = [];
+        this.playerHistory = [];
         this.init();
     }
 
@@ -36,6 +36,7 @@ class ChessGame {
         this.renderBoard();
         document.getElementById('resetBtn').addEventListener('click', () => this.reset());
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+        document.getElementById('undoAllBtn').addEventListener('click', () => this.undoAll());
         if (this.aiPlayer === 'white') {
             setTimeout(() => this.aiMove(), 500); // Delay for AI first move
         }
@@ -49,8 +50,8 @@ class ChessGame {
         this.moveHistory = [];
         this.gameOver = false;
         this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
-        this.previousBoard = null;
-        this.previousPlayer = null;
+        this.boardHistory = [];
+        this.playerHistory = [];
         this.renderBoard();
         this.updateStatus();
         if (this.aiPlayer === 'white') {
@@ -377,8 +378,8 @@ class ChessGame {
 
     movePiece(fromRow, fromCol, toRow, toCol) {
         // Save state for undo
-        this.previousBoard = this.board.map(row => [...row]);
-        this.previousPlayer = this.currentPlayer;
+        this.boardHistory.push(this.board.map(row => [...row]));
+        this.playerHistory.push(this.currentPlayer);
         
         const piece = this.board[fromRow][fromCol];
         const captured = this.board[toRow][toCol];
@@ -559,17 +560,33 @@ class ChessGame {
     }
 
     undo() {
-        if (this.previousBoard && this.previousPlayer) {
-            this.board = this.previousBoard.map(row => [...row]);
-            this.currentPlayer = this.previousPlayer;
+        if (this.boardHistory.length > 0) {
+            this.board = this.boardHistory.pop();
+            this.currentPlayer = this.playerHistory.pop();
             this.selectedSquare = null;
             this.validMoves = [];
-            this.previousBoard = null;
-            this.previousPlayer = null;
             this.moveHistory.pop(); // Remove last move from history
             this.renderBoard();
             this.updateStatus();
             document.getElementById('moveLog').textContent = 'Move undone';
+        }
+    }
+
+    undoAll() {
+        if (this.boardHistory.length > 0) {
+            this.board = this.initializeBoard();
+            this.currentPlayer = 'white';
+            this.selectedSquare = null;
+            this.validMoves = [];
+            this.moveHistory = [];
+            this.boardHistory = [];
+            this.playerHistory = [];
+            this.renderBoard();
+            this.updateStatus();
+            document.getElementById('moveLog').textContent = 'All moves undone';
+            if (this.aiPlayer === 'white') {
+                setTimeout(() => this.aiMove(), 500);
+            }
         }
     }
 }

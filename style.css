@@ -81,6 +81,22 @@ h1 {
     transform: scale(1.05);
 }
 
+#undoAllBtn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: transform 0.2s;
+    margin-left: 10px;
+}
+
+#undoAllBtn:hover {
+    transform: scale(1.05);
+}
+
 .board {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
