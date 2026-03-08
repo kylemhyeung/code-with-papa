@@ -10,6 +10,20 @@ class ChessGame {
         this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
         this.boardHistory = [];
         this.playerHistory = [];
+        this.kingMoved = { white: false, black: false };
+        this.rookMoved = { white: [false, false], black: [false, false] }; // [kingside, queenside]
+        this.encouragingMessages = [
+            "Great move! Keep it up!",
+            "You're playing brilliantly!",
+            "Nice strategy!",
+            "Excellent positioning!",
+            "You're doing fantastic!",
+            "Keep pushing forward!",
+            "Outstanding play!",
+            "You're on fire!",
+            "Brilliant thinking!",
+            "Superb move!"
+        ];
         this.init();
     }
 
@@ -52,6 +66,8 @@ class ChessGame {
         this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
         this.boardHistory = [];
         this.playerHistory = [];
+        this.kingMoved = { white: false, black: false };
+        this.rookMoved = { white: [false, false], black: [false, false] };
         this.renderBoard();
         this.updateStatus();
         if (this.aiPlayer === 'white') {
@@ -226,6 +242,29 @@ class ChessGame {
                 }
             }
         }
+        
+        // Castling
+        if (!this.kingMoved[isWhite ? 'white' : 'black'] && !this.isKingInCheck(isWhite)) {
+            const player = isWhite ? 'white' : 'black';
+            const kingRow = isWhite ? 0 : 7;
+            
+            // Kingside castling
+            if (!this.rookMoved[player][0] && 
+                this.board[kingRow][5] === null && this.board[kingRow][6] === null &&
+                !this.isSquareUnderAttack(kingRow, 5, !isWhite) && 
+                !this.isSquareUnderAttack(kingRow, 6, !isWhite)) {
+                moves.push([kingRow, 6]);
+            }
+            
+            // Queenside castling
+            if (!this.rookMoved[player][1] && 
+                this.board[kingRow][1] === null && this.board[kingRow][2] === null && this.board[kingRow][3] === null &&
+                !this.isSquareUnderAttack(kingRow, 2, !isWhite) && 
+                !this.isSquareUnderAttack(kingRow, 3, !isWhite)) {
+                moves.push([kingRow, 2]);
+            }
+        }
+        
         return moves;
     }
 
@@ -319,35 +358,18 @@ class ChessGame {
         return !inCheck;
     }
 
-    isKingInCheck(isWhite) {
-        let kingPos = null;
-        const kingChar = isWhite ? 'K' : 'k';
-        
-        for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-                if (this.board[r][c] === kingChar) {
-                    kingPos = [r, c];
-                    break;
-                }
-            }
-            if (kingPos) break;
-        }
-
-        if (!kingPos) return false;
-
-        // Check if any enemy piece can capture the king
+    isSquareUnderAttack(row, col, byWhite) {
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 const piece = this.board[r][c];
-                if (piece && (piece === piece.toUpperCase()) !== isWhite) {
+                if (piece && (piece === piece.toUpperCase()) === byWhite) {
                     const moves = this.getRawMoves(r, c);
-                    if (moves.some(m => m[0] === kingPos[0] && m[1] === kingPos[1])) {
+                    if (moves.some(m => m[0] === row && m[1] === col)) {
                         return true;
                     }
                 }
             }
         }
-        
         return false;
     }
 
@@ -392,8 +414,30 @@ class ChessGame {
             this.promotePawn(toRow, toCol, piece === 'P');
         }
         
-        const moveNotation = `${String.fromCharCode(97 + fromCol)}${8 - fromRow} → ${String.fromCharCode(97 + toCol)}${8 - toRow}`;
-        this.moveHistory.push(moveNotation);
+        // Track king and rook movements for castling
+        const isWhite = piece === piece.toUpperCase();
+        if (piece.toUpperCase() === 'K') {
+            this.kingMoved[isWhite ? 'white' : 'black'] = true;
+        } else if (piece.toUpperCase() === 'R') {
+            if (isWhite) {
+                if (fromCol === 0) this.rookMoved.white[1] = true; // queenside
+                if (fromCol === 7) this.rookMoved.white[0] = true; // kingside
+            } else {
+                if (fromCol === 0) this.rookMoved.black[1] = true; // queenside
+                if (fromCol === 7) this.rookMoved.black[0] = true; // kingside
+            }
+        }
+        
+        // Handle castling
+        if (piece.toUpperCase() === 'K' && Math.abs(fromCol - toCol) === 2) {
+            // Castling move
+            const isKingside = toCol > fromCol;
+            const rookFromCol = isKingside ? 7 : 0;
+            const rookToCol = isKingside ? 5 : 3;
+            this.board[toRow][rookToCol] = this.board[toRow][rookFromCol];
+            this.board[toRow][rookFromCol] = null;
+            this.rookMoved[isWhite ? 'white' : 'black'][isKingside ? 0 : 1] = true;
+        }
         
         if (captured) {
             document.getElementById('moveLog').textContent = `Captured ${this.getPieceSymbol(captured)} at ${moveNotation}`;
@@ -437,6 +481,12 @@ class ChessGame {
             this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
             this.renderBoard();
             this.updateStatus();
+            
+            // Show encouraging message
+            const message = this.encouragingMessages[Math.floor(Math.random() * this.encouragingMessages.length)];
+            setTimeout(() => {
+                alert(message);
+            }, 1000);
         }
     }
 
@@ -581,6 +631,8 @@ class ChessGame {
             this.moveHistory = [];
             this.boardHistory = [];
             this.playerHistory = [];
+            this.kingMoved = { white: false, black: false };
+            this.rookMoved = { white: [false, false], black: [false, false] };
             this.renderBoard();
             this.updateStatus();
             document.getElementById('moveLog').textContent = 'All moves undone';
