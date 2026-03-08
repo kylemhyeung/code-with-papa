@@ -6,6 +6,10 @@ class ChessGame {
         this.currentPlayer = 'white';
         this.moveHistory = [];
         this.gameOver = false;
+        this.aiPlayer = 'white'; // AI plays as white
+        this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
+        this.previousBoard = null;
+        this.previousPlayer = null;
         this.init();
     }
 
@@ -31,6 +35,10 @@ class ChessGame {
     init() {
         this.renderBoard();
         document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+        document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+        if (this.aiPlayer === 'white') {
+            setTimeout(() => this.aiMove(), 500); // Delay for AI first move
+        }
     }
 
     reset() {
@@ -40,8 +48,14 @@ class ChessGame {
         this.currentPlayer = 'white';
         this.moveHistory = [];
         this.gameOver = false;
+        this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
+        this.previousBoard = null;
+        this.previousPlayer = null;
         this.renderBoard();
         this.updateStatus();
+        if (this.aiPlayer === 'white') {
+            setTimeout(() => this.aiMove(), 500);
+        }
     }
 
     renderBoard() {
@@ -57,6 +71,8 @@ class ChessGame {
                 const piece = this.board[row][col];
                 if (piece) {
                     square.textContent = this.getPieceSymbol(piece);
+                    const isWhitePiece = piece === piece.toUpperCase();
+                    square.classList.add(isWhitePiece ? 'white-piece' : 'black-piece');
                 }
 
                 // Highlight selected square
@@ -110,6 +126,9 @@ class ChessGame {
             this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
             this.renderBoard();
             this.updateStatus();
+            if (this.currentPlayer === this.aiPlayer) {
+                setTimeout(() => this.aiMove(), 500);
+            }
             return;
         }
 
@@ -153,8 +172,8 @@ class ChessGame {
 
     getPawnMoves(row, col, isWhite) {
         const moves = [];
-        const direction = isWhite ? -1 : 1;
-        const startRow = isWhite ? 6 : 1;
+        const direction = isWhite ? 1 : -1;
+        const startRow = isWhite ? 1 : 6;
 
         // Forward move
         const nextRow = row + direction;
@@ -357,11 +376,20 @@ class ChessGame {
     }
 
     movePiece(fromRow, fromCol, toRow, toCol) {
+        // Save state for undo
+        this.previousBoard = this.board.map(row => [...row]);
+        this.previousPlayer = this.currentPlayer;
+        
         const piece = this.board[fromRow][fromCol];
         const captured = this.board[toRow][toCol];
         
         this.board[toRow][toCol] = piece;
         this.board[fromRow][fromCol] = null;
+        
+        // Check for pawn promotion
+        if ((piece === 'P' && toRow === 7) || (piece === 'p' && toRow === 0)) {
+            this.promotePawn(toRow, toCol, piece === 'P');
+        }
         
         const moveNotation = `${String.fromCharCode(97 + fromCol)}${8 - fromRow} → ${String.fromCharCode(97 + toCol)}${8 - toRow}`;
         this.moveHistory.push(moveNotation);
@@ -373,18 +401,175 @@ class ChessGame {
         }
     }
 
+    aiMove() {
+        const isWhite = this.currentPlayer === 'white';
+        const depth = this.getDepthFromElo(this.aiElo);
+        const moves = this.getAllLegalMoves(isWhite);
+        
+        if (moves.length === 0) return; // No moves, game over?
+        
+        let bestMove = null;
+        let bestScore = -Infinity;
+        
+        for (const move of moves) {
+            const [fromRow, fromCol, toRow, toCol] = move;
+            // Simulate move
+            const piece = this.board[fromRow][fromCol];
+            const captured = this.board[toRow][toCol];
+            this.board[toRow][toCol] = piece;
+            this.board[fromRow][fromCol] = null;
+            
+            const score = this.minimax(depth - 1, !isWhite, -Infinity, Infinity);
+            
+            // Undo move
+            this.board[fromRow][fromCol] = piece;
+            this.board[toRow][toCol] = captured;
+            
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+        
+        if (bestMove) {
+            this.movePiece(bestMove[0], bestMove[1], bestMove[2], bestMove[3]);
+            this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+            this.renderBoard();
+            this.updateStatus();
+        }
+    }
+
     updateStatus() {
         const turnDiv = document.getElementById('turn');
         const statusDiv = document.getElementById('status');
         
         turnDiv.textContent = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
+        statusDiv.textContent = 'Game in progress';
+        statusDiv.style.color = '#764ba2';
+    }
+
+    getDepthFromElo(elo) {
+        if (elo < 800) return 1;
+        if (elo < 1200) return 2;
+        if (elo < 1600) return 3;
+        if (elo < 2000) return 4;
+        if (elo < 2400) return 5;
+        return 6;
+    }
+
+    getAllLegalMoves(isWhite) {
+        const moves = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = this.board[r][c];
+                if (piece && (piece === piece.toUpperCase()) === isWhite) {
+                    const pieceMoves = this.getValidMoves(r, c);
+                    for (const [toR, toC] of pieceMoves) {
+                        moves.push([r, c, toR, toC]);
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+
+    minimax(depth, isMaximizing, alpha, beta) {
+        if (depth === 0) {
+            return this.evaluateBoard();
+        }
         
-        // Check for check or checkmate
-        if (this.isKingInCheck(this.currentPlayer === 'white')) {
-            statusDiv.textContent = 'Check!';
-            // TODO: Implement checkmate detection
+        const isWhite = isMaximizing;
+        const moves = this.getAllLegalMoves(isWhite);
+        
+        if (moves.length === 0) {
+            return isMaximizing ? -10000 : 10000; // Checkmate
+        }
+        
+        if (isMaximizing) {
+            let maxEval = -Infinity;
+            for (const move of moves) {
+                const [fr, fc, tr, tc] = move;
+                const piece = this.board[fr][fc];
+                const captured = this.board[tr][tc];
+                this.board[tr][tc] = piece;
+                this.board[fr][fc] = null;
+                
+                // Handle promotion
+                if ((piece === 'P' && tr === 7) || (piece === 'p' && tr === 0)) {
+                    this.board[tr][tc] = piece === 'P' ? 'Q' : 'q';
+                }
+                
+                const evaluation = this.minimax(depth - 1, false, alpha, beta);
+                maxEval = Math.max(maxEval, evaluation);
+                alpha = Math.max(alpha, evaluation);
+                
+                this.board[fr][fc] = piece;
+                this.board[tr][tc] = captured;
+                
+                if (beta <= alpha) break;
+            }
+            return maxEval;
         } else {
-            statusDiv.textContent = 'Game in progress';
+            let minEval = Infinity;
+            for (const move of moves) {
+                const [fr, fc, tr, tc] = move;
+                const piece = this.board[fr][fc];
+                const captured = this.board[tr][tc];
+                this.board[tr][tc] = piece;
+                this.board[fr][fc] = null;
+                
+                // Handle promotion
+                if ((piece === 'P' && tr === 7) || (piece === 'p' && tr === 0)) {
+                    this.board[tr][tc] = piece === 'P' ? 'Q' : 'q';
+                }
+                
+                const evaluation = this.minimax(depth - 1, true, alpha, beta);
+                minEval = Math.min(minEval, evaluation);
+                beta = Math.min(beta, evaluation);
+                
+                this.board[fr][fc] = piece;
+                this.board[tr][tc] = captured;
+                
+                if (beta <= alpha) break;
+            }
+            return minEval;
+        }
+    }
+
+    evaluateBoard() {
+        let score = 0;
+        const pieceValues = {
+            'P': 1, 'p': -1,
+            'N': 3, 'n': -3,
+            'B': 3, 'b': -3,
+            'R': 5, 'r': -5,
+            'Q': 9, 'q': -9,
+            'K': 0, 'k': 0
+        };
+        
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = this.board[r][c];
+                if (piece) {
+                    score += pieceValues[piece] || 0;
+                }
+            }
+        }
+        return score;
+    }
+
+    undo() {
+        if (this.previousBoard && this.previousPlayer) {
+            this.board = this.previousBoard.map(row => [...row]);
+            this.currentPlayer = this.previousPlayer;
+            this.selectedSquare = null;
+            this.validMoves = [];
+            this.previousBoard = null;
+            this.previousPlayer = null;
+            this.moveHistory.pop(); // Remove last move from history
+            this.renderBoard();
+            this.updateStatus();
+            document.getElementById('moveLog').textContent = 'Move undone';
         }
     }
 }
