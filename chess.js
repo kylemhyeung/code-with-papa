@@ -380,6 +380,22 @@ class ChessGame {
         }
     }
 
+    getAllLegalMoves(isWhite) {
+        const moves = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = this.board[r][c];
+                if (piece && (piece === piece.toUpperCase()) === isWhite) {
+                    const pieceMoves = this.getValidMoves(r, c);
+                    for (const [toR, toC] of pieceMoves) {
+                        moves.push([r, c, toR, toC]);
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+
     movePiece(fromRow, fromCol, toRow, toCol) {
         // Save state for undo
         this.boardHistory.push(this.board.map(row => [...row]));
