@@ -6,7 +6,7 @@ class ChessGame {
         this.currentPlayer = 'white';
         this.moveHistory = [];
         this.gameOver = false;
-        this.aiPlayer = 'white'; // AI plays as white
+        this.aiPlayer = 'black'; // AI plays as black
         this.aiElo = parseInt(document.getElementById('aiElo').value) || 600;
         this.boardHistory = [];
         this.playerHistory = [];
@@ -52,9 +52,7 @@ class ChessGame {
         document.getElementById('resetBtn').addEventListener('click', () => this.reset());
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         document.getElementById('undoAllBtn').addEventListener('click', () => this.undoAll());
-        if (this.aiPlayer === 'white') {
-            setTimeout(() => this.aiMove(), 500); // Delay for AI first move
-        }
+        // AI plays as black, so human (white) moves first
     }
 
     reset() {
@@ -72,9 +70,7 @@ class ChessGame {
         this.isAiThinking = false;
         this.renderBoard();
         this.updateStatus();
-        if (this.aiPlayer === 'white') {
-            setTimeout(() => this.aiMove(), 500);
-        }
+        // AI plays as black, so human (white) moves first
     }
 
     renderBoard() {
@@ -653,9 +649,7 @@ class ChessGame {
             this.renderBoard();
             this.updateStatus();
             document.getElementById('moveLog').textContent = 'All moves undone';
-            if (this.aiPlayer === 'white') {
-                setTimeout(() => this.aiMove(), 500);
-            }
+            // AI plays as black, so human (white) moves first
         }
     }
 }
