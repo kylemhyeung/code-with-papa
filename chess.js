@@ -240,29 +240,6 @@ class ChessGame {
                 }
             }
         }
-        
-        // Castling
-        if (!this.kingMoved[isWhite ? 'white' : 'black'] && !this.isKingInCheck(isWhite)) {
-            const player = isWhite ? 'white' : 'black';
-            const kingRow = isWhite ? 0 : 7;
-            
-            // Kingside castling
-            if (!this.rookMoved[player][0] && 
-                this.board[kingRow][5] === null && this.board[kingRow][6] === null &&
-                !this.isSquareUnderAttack(kingRow, 5, !isWhite) && 
-                !this.isSquareUnderAttack(kingRow, 6, !isWhite)) {
-                moves.push([kingRow, 6]);
-            }
-            
-            // Queenside castling
-            if (!this.rookMoved[player][1] && 
-                this.board[kingRow][1] === null && this.board[kingRow][2] === null && this.board[kingRow][3] === null &&
-                !this.isSquareUnderAttack(kingRow, 2, !isWhite) && 
-                !this.isSquareUnderAttack(kingRow, 3, !isWhite)) {
-                moves.push([kingRow, 2]);
-            }
-        }
-        
         return moves;
     }
 
@@ -343,6 +320,24 @@ class ChessGame {
     isValidMove(fromRow, fromCol, toRow, toCol, isWhite) {
         // Temporarily allow all moves to debug
         return true;
+    }
+
+    isKingInCheck(isWhite) {
+        let kingPos = null;
+        const kingChar = isWhite ? 'K' : 'k';
+        
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (this.board[r][c] === kingChar) {
+                    kingPos = [r, c];
+                    break;
+                }
+            }
+            if (kingPos) break;
+        }
+
+        if (!kingPos) return false;
+        return this.isSquareUnderAttack(kingPos[0], kingPos[1], !isWhite);
     }
 
     isSquareUnderAttack(row, col, byWhite) {
