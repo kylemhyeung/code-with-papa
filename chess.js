@@ -439,6 +439,14 @@ class ChessGame {
         
         if (captured) {
             document.getElementById('moveLog').textContent = `Captured ${this.getPieceSymbol(captured)} at ${moveNotation}`;
+            
+            // Check if king was captured - Player wins!
+            if (captured.toUpperCase() === 'K') {
+                this.gameOver = true;
+                document.getElementById('status').textContent = '🎉 YOU WIN! You captured the king!';
+                document.getElementById('status').style.color = '#00ff00';
+                return;
+            }
         } else {
             document.getElementById('moveLog').textContent = `Last move: ${moveNotation}`;
         }
@@ -458,7 +466,18 @@ class ChessGame {
         
         // For debugging, just make the first move
         const move = moves[0];
+        const capturedPiece = this.board[move[2]][move[3]];
         this.movePiece(move[0], move[1], move[2], move[3]);
+        
+        // Check if AI captured the player's king - AI wins!
+        if (capturedPiece && capturedPiece.toUpperCase() === 'K') {
+            this.gameOver = true;
+            document.getElementById('status').textContent = '💀 Game Over! AI captured your king!';
+            document.getElementById('status').style.color = '#ff0000';
+            this.isAiThinking = false;
+            return;
+        }
+        
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.renderBoard();
         this.updateStatus();
