@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Chess Game</h1>
+        <div class="info">
+            <p>Current Turn: <span id="turn">White</span></p>
+            <p id="status">Game in progress</p>
+            <button id="resetBtn">New Game</button>
+        </div>
+        <div class="board" id="board"></div>
+        <div class="controls">
+            <p>White: Uppercase | Black: Lowercase</p>
+            <p id="moveLog"></p>
+        </div>
+    </div>
+    <script src="chess.js"></script>
+</body>
+</html>
