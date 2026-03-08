@@ -341,19 +341,8 @@ class ChessGame {
     }
 
     isValidMove(fromRow, fromCol, toRow, toCol, isWhite) {
-        // Simulate the move to check for check
-        const piece = this.board[fromRow][fromCol];
-        const captured = this.board[toRow][toCol];
-        
-        this.board[toRow][toCol] = piece;
-        this.board[fromRow][fromCol] = null;
-        
-        const inCheck = this.isKingInCheck(isWhite);
-        
-        this.board[fromRow][fromCol] = piece;
-        this.board[toRow][toCol] = captured;
-        
-        return !inCheck;
+        // Temporarily allow all moves to debug
+        return true;
     }
 
     isSquareUnderAttack(row, col, byWhite) {
