@@ -438,53 +438,20 @@ class ChessGame {
         this.updateStatus(); // Show "AI is thinking..."
         
         const isWhite = this.currentPlayer === 'white';
-        const depth = this.getDepthFromElo(this.aiElo);
         const moves = this.getAllLegalMoves(isWhite);
         
         if (moves.length === 0) {
             this.isAiThinking = false;
-            return; // No moves, game over?
+            return; // No moves
         }
         
-        let bestMove = null;
-        let bestScore = -Infinity;
-        
-        for (const move of moves) {
-            const [fromRow, fromCol, toRow, toCol] = move;
-            // Simulate move
-            const piece = this.board[fromRow][fromCol];
-            const captured = this.board[toRow][toCol];
-            this.board[toRow][toCol] = piece;
-            this.board[fromRow][fromCol] = null;
-            
-            const score = this.minimax(depth - 1, !isWhite, -Infinity, Infinity);
-            
-            // Undo move
-            this.board[fromRow][fromCol] = piece;
-            this.board[toRow][toCol] = captured;
-            
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = move;
-            }
-        }
-        
-        if (bestMove) {
-            this.movePiece(bestMove[0], bestMove[1], bestMove[2], bestMove[3]);
-            this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
-            this.renderBoard();
-            this.updateStatus();
-            
-            // Show encouraging message
-            // const message = this.encouragingMessages[Math.floor(Math.random() * this.encouragingMessages.length)];
-            // setTimeout(() => {
-            //     alert(message);
-            //     this.isAiThinking = false;
-            // }, 1000);
-            this.isAiThinking = false;
-        } else {
-            this.isAiThinking = false;
-        }
+        // For debugging, just make the first move
+        const move = moves[0];
+        this.movePiece(move[0], move[1], move[2], move[3]);
+        this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+        this.renderBoard();
+        this.updateStatus();
+        this.isAiThinking = false;
     }
 
     updateStatus() {
