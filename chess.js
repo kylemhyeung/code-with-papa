@@ -24,6 +24,7 @@ class ChessGame {
             "Brilliant thinking!",
             "Superb move!"
         ];
+        this.isAiThinking = false;
         this.init();
     }
 
@@ -68,6 +69,7 @@ class ChessGame {
         this.playerHistory = [];
         this.kingMoved = { white: false, black: false };
         this.rookMoved = { white: [false, false], black: [false, false] };
+        this.isAiThinking = false;
         this.renderBoard();
         this.updateStatus();
         if (this.aiPlayer === 'white') {
@@ -121,7 +123,7 @@ class ChessGame {
     }
 
     handleSquareClick(row, col) {
-        if (this.gameOver) return;
+        if (this.gameOver || this.isAiThinking) return;
 
         const piece = this.board[row][col];
         const isWhite = piece && piece === piece.toUpperCase();
@@ -447,11 +449,17 @@ class ChessGame {
     }
 
     aiMove() {
+        this.isAiThinking = true;
+        this.updateStatus(); // Show "AI is thinking..."
+        
         const isWhite = this.currentPlayer === 'white';
         const depth = this.getDepthFromElo(this.aiElo);
         const moves = this.getAllLegalMoves(isWhite);
         
-        if (moves.length === 0) return; // No moves, game over?
+        if (moves.length === 0) {
+            this.isAiThinking = false;
+            return; // No moves, game over?
+        }
         
         let bestMove = null;
         let bestScore = -Infinity;
@@ -486,7 +494,10 @@ class ChessGame {
             const message = this.encouragingMessages[Math.floor(Math.random() * this.encouragingMessages.length)];
             setTimeout(() => {
                 alert(message);
+                this.isAiThinking = false;
             }, 1000);
+        } else {
+            this.isAiThinking = false;
         }
     }
 
@@ -495,8 +506,13 @@ class ChessGame {
         const statusDiv = document.getElementById('status');
         
         turnDiv.textContent = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
-        statusDiv.textContent = 'Game in progress';
-        statusDiv.style.color = '#764ba2';
+        if (this.isAiThinking) {
+            statusDiv.textContent = 'AI is thinking...';
+            statusDiv.style.color = '#ff6b6b';
+        } else {
+            statusDiv.textContent = 'Game in progress';
+            statusDiv.style.color = '#764ba2';
+        }
     }
 
     getDepthFromElo(elo) {
@@ -633,6 +649,7 @@ class ChessGame {
             this.playerHistory = [];
             this.kingMoved = { white: false, black: false };
             this.rookMoved = { white: [false, false], black: [false, false] };
+            this.isAiThinking = false;
             this.renderBoard();
             this.updateStatus();
             document.getElementById('moveLog').textContent = 'All moves undone';
