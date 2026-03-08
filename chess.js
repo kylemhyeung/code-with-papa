@@ -476,11 +476,12 @@ class ChessGame {
             this.updateStatus();
             
             // Show encouraging message
-            const message = this.encouragingMessages[Math.floor(Math.random() * this.encouragingMessages.length)];
-            setTimeout(() => {
-                alert(message);
-                this.isAiThinking = false;
-            }, 1000);
+            // const message = this.encouragingMessages[Math.floor(Math.random() * this.encouragingMessages.length)];
+            // setTimeout(() => {
+            //     alert(message);
+            //     this.isAiThinking = false;
+            // }, 1000);
+            this.isAiThinking = false;
         } else {
             this.isAiThinking = false;
         }
