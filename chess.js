@@ -142,7 +142,7 @@ class ChessGame {
             this.renderBoard();
             this.updateStatus();
             if (this.currentPlayer === this.aiPlayer) {
-                setTimeout(() => this.aiMove(), 500);
+                this.aiMove();
             }
             return;
         }
@@ -501,12 +501,12 @@ class ChessGame {
     }
 
     getDepthFromElo(elo) {
-        if (elo < 800) return 1;
-        if (elo < 1200) return 2;
-        if (elo < 1600) return 3;
-        if (elo < 2000) return 4;
-        if (elo < 2400) return 5;
-        return 6;
+        if (elo < 800) return 2; // Temporarily increase for testing
+        if (elo < 1200) return 3;
+        if (elo < 1600) return 4;
+        if (elo < 2000) return 5;
+        if (elo < 2400) return 6;
+        return 7;
     }
 
     getAllLegalMoves(isWhite) {
